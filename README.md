@@ -128,8 +128,45 @@ foreach (var move in moves)
     return strongestMoveKeyValuePair.Value == 0 ? moves[random.Next(0, moves.Length)] : strongestMoveKeyValuePair.Key;
 ```
 
+### Test 3
 
+For this tested, i improved test 2 further by adding a CanBeCaptured methode,
+which will reduce the points of the move by the pawn being captured, being when the move will make it they can capture a higher
+value piece it will be reduced.
 
+The results showing a big improvement once again, where i win about half of the matches right now.
+but also has a higher change of getting stuck in a loop while going against himself.
+#### Result:
+| MyBot   | Wins | Draws | Loses |
+|---------|------|-------|-------|
+| MyBot   | 27   | 945   | 28    |
+| Human   | -    | -     | -     |
+| EvilBot | 496  | 494   | 10    |
+
+```csharp
+Random random = new Random();
+var moves = board.GetLegalMoves();
+       
+Dictionary<Move, int> moveStrengthMapper = new();
+  
+foreach (var move in moves)
+{
+    if (MoveIsCheckmate(board, move)) return move;
+    moveStrengthMapper[move] = CalculatePoints(board, move);
+}
+
+var strongestMoveKeyValuePair = moveStrengthMapper.MaxBy(x => x.Value);
+return strongestMoveKeyValuePair.Value == 0 ? moves[random.Next(0, moves.Length)] : strongestMoveKeyValuePair.Key;
+```
+
+```csharp
+int CalculatePoints(Board board, Move move)
+{
+    int capturePoints = CanBeCaptured(board, move.TargetSquare, move) ? (int)move.MovePieceType : 0;
+    int points = (int)move.CapturePieceType + ((int)move.MovePieceType * -1 + 6) / 2 + (move.IsPromotion ? 10 : 0) - capturePoints;
+    return points;
+}
+```
 
 ### I added some additional utility functions
 To reduce the length of the readme and not repeat the same piece of code a lot the utility methodes will be grouped here.
@@ -141,4 +178,23 @@ bool MoveIsCheckmate(Board board, Move move)
     board.UndoMove(move);
     return isMate;
 }
+
 ````
+
+```cs
+private bool CanBeCaptured(Board board, Square square, Move move)
+{
+    board.MakeMove(move);
+    bool result = board.GetLegalMoves().Any(x => x.TargetSquare == square);
+    board.UndoMove(move);
+    return result;
+}
+
+```
+
+```cs
+    private List<PieceType> GetCaptureAblePieces(Board board)
+    {
+        return board.GetLegalMoves(true).Select(x => x.MovePieceType).ToList();
+    }
+```
