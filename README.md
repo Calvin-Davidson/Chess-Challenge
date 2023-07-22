@@ -61,3 +61,84 @@ All names (variables, functions, etc.) are counted as a single token, regardless
 * [Running on Linux](https://github.com/SebLague/Chess-Challenge/discussions/3)
 * [How to run if using a different code editor](https://github.com/SebLague/Chess-Challenge/issues/85)
   
+
+
+## My solutations:
+
+### Test 1
+
+My first try is exactly the same as the EvilBot version, this was not my intention but i found out later.
+By using a dictionary we give each move a certain strength, where the strength is based on which piece it can capture.
+
+as we can see in the result, the bots are evenly matched, as they are just prioritizing taking over.
+#### Result:
+| MyBot   | Wins | Draws | Loses |
+|---------|------|-------|-------|
+| MyBot   | 86   | 812   | 102   |
+| Human   | -    | -     | -     |
+| EvilBot | 100  | 814   | 86    |
+
+```csharp
+Random random = new Random();
+Move[] moves = board.GetLegalMoves();
+Dictionary<Move, int> moveStrengthMapper = new();
+ 
+foreach (var move in moves)
+{
+    if (MoveIsCheckmate(board, move)) return move;
+    moveStrengthMapper[move] = (int)move.CapturePieceType;
+}
+var strongestMoveKeyValuePair = moveStrengthMapper.MaxBy(x => x.Value);
+return strongestMoveKeyValuePair.Value == 0 ? moves[random.Next(0, moves.Length)] : strongestMoveKeyValuePair.Key;
+```
+
+### Test 2
+
+My second try is just a improved version of my first try.
+
+
+Where not only prioritizing take overs, we also want to reduce risk by not moving valuable pieces, we rather not move the king piece if not needed.
+so by adding a additional check where the movePiece value is halved and removed from the strength we decrease the risk of making a bad move.
+
+If we have no good moves, we do a random move.
+
+As the result show us, this is already a big improvement over the previous version, where we win 3 times more.
+we still lost a lot, where is is about .3 times less likely to lose.
+
+#### Result:
+| MyBot   | Wins | Draws | Loses  |
+|---------|-----|-------|--------|
+| MyBot   | 217 | 596   | 187    |
+| Human   | -   | -     | -      |
+| EvilBot | 314 | 635   | 51     |
+
+```csharp
+Random random = new Random();
+Move[] moves = board.GetLegalMoves();
+
+Dictionary<Move, int> moveStrengthMapper = new();
+  
+foreach (var move in moves)
+{
+     if (MoveIsCheckmate(board, move)) return move;
+     moveStrengthMapper[move] = (int)move.CapturePieceType + ((int)move.MovePieceType * -1 + 6) / 2 + (move.IsPromotion ? 10 : 0);
+}
+
+    var strongestMoveKeyValuePair = moveStrengthMapper.MaxBy(x => x.Value);
+    return strongestMoveKeyValuePair.Value == 0 ? moves[random.Next(0, moves.Length)] : strongestMoveKeyValuePair.Key;
+```
+
+
+
+
+### I added some additional utility functions
+To reduce the length of the readme and not repeat the same piece of code a lot the utility methodes will be grouped here.
+````csharp
+bool MoveIsCheckmate(Board board, Move move)
+{
+    board.MakeMove(move);
+    bool isMate = board.IsInCheckmate();
+    board.UndoMove(move);
+    return isMate;
+}
+````
